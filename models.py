@@ -72,6 +72,7 @@ class NearEarthObject:
 
     def serialize(self):
         """Return a dict representation of self attributes.
+
         Returns:
             [dict]: Keys associated with self attributes.
         """
@@ -96,6 +97,7 @@ class CloseApproach:
     private attribute, but the referenced NEO is eventually replaced in the
     `NEODatabase` constructor.
     """
+
     def __init__(self, **info):
         """Create a new `CloseApproach`.
 
@@ -117,6 +119,7 @@ class CloseApproach:
     @property
     def designation(self):
         """Get designation.
+
         Returns:
             [str]: Returns self._designation
         """
