@@ -72,30 +72,105 @@ class AttributeFilter:
         return f"{self.__class__.__name__}(op=operator.{self.op.__name__}, value={self.value})"
 
 
-def create_filters(
-        date=None, start_date=None, end_date=None,
-        distance_min=None, distance_max=None,
-        velocity_min=None, velocity_max=None,
-        diameter_min=None, diameter_max=None,
-        hazardous=None
-):
-    """Create a collection of filters from user-specified criteria.
+class DateFilter(AttributeFilter):
+    """Subclass of AttributeFilter to filter CloseApproach objects by date."""
 
+    @classmethod
+    def get(cls, approach):
+        """Return approach.time converted to datetime.datetime object for the date filter.
+
+        Args:
+            approach (CloseApproach): A CloseApproach object.
+        Returns:
+            [datetime.datetime]: Converted time to datetime object.
+
+        """
+        return approach.time.date()
+
+
+class DistanceFilter(AttributeFilter):
+    """Subclass of AttributeFilter to filter approach objects by distance."""
+
+    @classmethod
+    def get(cls, approach):
+        """Return distance of the CloseApproach objectfor the distance filter.
+
+        Args:
+            approach (CloseApproach): A CloseApproach object.
+        Returns:
+            [float]: Returns the distance of a CloseApproach.
+
+        """
+        return approach.distance
+
+
+class VelocityFilter(AttributeFilter):
+    """Subclass of AttributeFilter to filter approach objects by velocity."""
+
+    @classmethod
+    def get(cls, approach):
+        """Return approach.velocity for the velocity filter.
+
+        Args:
+            approach (CloseApproach): A CloseApproach object.
+        Returns:
+            [float]: Returns the velocity of a CloseApproach.
+
+        """
+        return approach.velocity
+
+
+class DiameterFilter(AttributeFilter):
+    """Subclass of AttributeFilter to filter approach objects by diameter."""
+
+    @classmethod
+    def get(cls, approach):
+        """Return the diameter of the neo assigned to the CloseApproach object for the diameter filter.
+
+        Args:
+            approach (CloseApproach): A CloseApproach object.
+        Returns:
+            [float]: Returns the diameter of a NearEarthObject object.
+
+        """
+        return approach.neo.diameter
+
+
+class HazardousFilter(AttributeFilter):
+    """Subclass to filter CloseApproach objects by if it's hazardous."""
+
+    @classmethod
+    def get(cls, approach):
+        """Return the hazardous attribute of the neo assigned to the CloseApproach object for the diameter filter.
+
+        Args:
+            approach (CloseApproach): A CloseApproach object.
+        Returns:
+            [float]: Returns the hazardous attribute of a NearEarthObject object.
+
+        """
+        return approach.neo.hazardous
+
+
+def create_filters(date=None, start_date=None, end_date=None,
+                   distance_min=None, distance_max=None,
+                   velocity_min=None, velocity_max=None,
+                   diameter_min=None, diameter_max=None,
+                   hazardous=None):
+    """Create a collection of filters from user-specified criteria.
     Each of these arguments is provided by the main module with a value from the
     user's options at the command line. Each one corresponds to a different type
     of filter. For example, the `--date` option corresponds to the `date`
-    argument, and represents a filter that selects close approaches that occurred
+    argument, and represents a filter that selects close approaches that occured
     on exactly that given date. Similarly, the `--min-distance` option
     corresponds to the `distance_min` argument, and represents a filter that
     selects close approaches whose nominal approach distance is at least that
     far away from Earth. Each option is `None` if not specified at the command
     line (in particular, this means that the `--not-hazardous` flag results in
     `hazardous=False`, not to be confused with `hazardous=None`).
-
     The return value must be compatible with the `query` method of `NEODatabase`
     because the main module directly passes this result to that method. For now,
     this can be thought of as a collection of `AttributeFilter`s.
-
     :param date: A `date` on which a matching `CloseApproach` occurs.
     :param start_date: A `date` on or after which a matching `CloseApproach` occurs.
     :param end_date: A `date` on or before which a matching `CloseApproach` occurs.
@@ -108,18 +183,40 @@ def create_filters(
     :param hazardous: Whether the NEO of a matching `CloseApproach` is potentially hazardous.
     :return: A collection of filters for use with `query`.
     """
-    # TODO: Decide how you will represent your filters.
-    return ()
+    filters = []
+
+    if date:
+        filters.append(DateFilter(operator.eq, date))
+    if start_date:
+        filters.append(DateFilter(operator.ge, start_date))
+    if end_date:
+        filters.append(DateFilter(operator.le, end_date))
+    if distance_min:
+        filters.append(DistanceFilter(operator.ge, distance_min))
+    if distance_max:
+        filters.append(DistanceFilter(operator.le, distance_max))
+    if velocity_min:
+        filters.append(VelocityFilter(operator.ge, velocity_min))
+    if velocity_max:
+        filters.append(VelocityFilter(operator.le, velocity_max))
+    if diameter_min:
+        filters.append(DiameterFilter(operator.ge, diameter_min))
+    if diameter_max:
+        filters.append(DiameterFilter(operator.le, diameter_max))
+    if hazardous is not None:
+        filters.append(HazardousFilter(operator.eq, hazardous))
+
+    return filters
 
 
 def limit(iterator, n=None):
     """Produce a limited stream of values from an iterator.
-
     If `n` is 0 or None, don't limit the iterator at all.
-
     :param iterator: An iterator of values.
     :param n: The maximum number of values to produce.
     :yield: The first (at most) `n` values from the iterator.
     """
-    # TODO: Produce at most `n` values from the given iterator.
-    return iterator
+    if n == 0 or n is None:
+        return iterator
+    return [x for i, x in enumerate(iterator) if
+            i < n]
